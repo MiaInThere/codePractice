@@ -1,0 +1,75 @@
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+# 데이터 로드 및 탐색
+data = pd.read_csv('data.csv')
+sns.pairplot(data)
+plt.show()
+
+# 모델 정의
+formula = 'y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10 + x11 + x12 + x13 + x14 + x15 + x16 + x17 + x18 + x19 + x20 + x21 + x22 + x23 + x24 + x25 + x26 + x27 + x28'
+model = ols(formula, data=data).fit()
+
+# 모델 요약 출력
+print(model.summary())
+
+# 모델 가정 검증
+# 잔차 플롯
+residuals = model.resid
+fig, ax = plt.subplots()
+sns.scatterplot(x=model.fittedvalues, y=residuals, ax=ax)
+ax.axhline(0, color='red', linestyle='--')
+ax.set_xlabel("적합 값")
+ax.set_ylabel("잔차")
+ax.set_title("적합 값 대 잔차")
+plt.show()
+
+# 잔차의 정규성 검사
+fig, ax = plt.subplots()
+sns.histplot(residuals, kde=True, ax=ax)
+ax.set_title("잔차의 히스토그램")
+plt.show()
+
+# QQ-plot 추가
+fig, ax = plt.subplots()
+sm.qqplot(residuals, line='45', fit=True, ax=ax)
+ax.set_title("QQ-plot")
+plt.show()
+
+# 예측값 및 잔차 계산
+data['predicted_y'] = model.predict(data)
+data['residuals'] = data['y'] - data['predicted_y']
+
+# 잔차 시각화
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x=data['predicted_y'], y=data['residuals'])
+plt.axhline(y=0, color='r', linestyle='--')
+plt.xlabel('Predicted Values')
+plt.ylabel('Residuals')
+plt.title('Residuals vs Predicted Values')
+plt.show()
+
+# 상관계수 행렬 계산 및 시각화
+correlation_matrix = data.corr()
+plt.figure(figsize=(12, 10))
+sns.heatmap(correlation_matrix, annot=True, fmt=".2f")
+plt.title("Variable Correlation Matrix")
+plt.show()
+
+# 독립변수 선택 및 VIF 계산
+features = data.iloc[:, :-1]  # 마지막 열이 종속 변수라고 가정
+vif_data = pd.DataFrame()
+vif_data['feature'] = features.columns
+vif_data['VIF'] = [variance_inflation_factor(features.values, i) for i in range(features.shape[1])]
+print(vif_data)
+
+# 결과 분석
+print("R-squared:", model.rsquared)
+print("\nCoefficients:")
+print(model.params)
+print("\nConfidence Intervals:")
+print(model.conf_int())
